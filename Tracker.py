@@ -17,7 +17,7 @@ timestamp = iss_json["timestamp"]
 def log_to_db():
     dbConnect = sqlite3.connect("ISS.db")
     c = dbConnect.cursor()
-    c.execute("CREATE TABLE IF NOT EXISTS iss_position (timestamp text, latitude text, longitude text)")
+    c.execute("CREATE TABLE IF NOT EXISTS iss_position (timestamp text, latitude int, longitude int)")
     values = [(timestamp), (coordinates["latitude"]), (coordinates["longitude"])]
     c.execute("INSERT INTO iss_position (timestamp, latitude, longitude) VALUES (?, ?, ?)", values)
     dbConnect.commit()
@@ -27,10 +27,21 @@ def log_to_db():
 
 # Track the ISS in real time
 def track_iss():
-    print("The ISS is currently at Latitude:", coordinates["latitude"], "and Longitude:", coordinates["longitude"], "Timestamp:", timestamp)
+    print("The ISS is currently at Latitude:", coordinates["latitude"], "and Longitude:", coordinates["longitude"], "Timestamp:", time.ctime(timestamp))
     log_to_db()
 
-#
+# Check who and how many are on board and print to screen
+
+# Grab JSON data
+astronauts = requests.get("http://api.open-notify.org/astros.json")
+astronauts_json = astronauts.json()
+
+#Loop through the astronauts name
+print("There are currently", astronauts_json["number"], "people on board the ISS. They are...")
+for astronaut in astronauts_json["people"]:
+     print("Astronaut",  astronaut["name"], "who is on board the", astronaut["craft"])
+
+# Start tracking the ISS
 print("Starting tracking, press 'Ctrl + C' to stop...")
 
 try:

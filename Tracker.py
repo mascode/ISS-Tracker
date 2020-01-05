@@ -3,18 +3,21 @@ import requests
 import sqlite3
 import time
 
-# Grab ISS' location and add the JSON to a variable 
-iss_location = requests.get("http://api.open-notify.org/iss-now.json")
-iss_json = iss_location.json()
-
-# Parse the some data from the returned JSON
-coordinates = iss_json["iss_position"]
-timestamp = iss_json["timestamp"]
-
-# Define functions
+# Track the ISS in real time and log the coordinates to the database
+def track_iss():
+    iss_location = requests.get("http://api.open-notify.org/iss-now.json") 
+    iss_json = iss_location.json()
+    coordinates = iss_json["iss_position"]
+    timestamp = iss_json["timestamp"]
+    print("The ISS is currently at Latitude:", coordinates["latitude"], "and Longitude:", coordinates["longitude"], "Timestamp:", time.ctime(timestamp))
+    log_to_db()
 
 # Save to Database
 def log_to_db():
+    iss_location = requests.get("http://api.open-notify.org/iss-now.json") 
+    iss_json = iss_location.json()
+    coordinates = iss_json["iss_position"]
+    timestamp = iss_json["timestamp"]
     dbConnect = sqlite3.connect("ISS.db")
     c = dbConnect.cursor()
     c.execute("CREATE TABLE IF NOT EXISTS iss_position (timestamp text, latitude int, longitude int)")
@@ -25,32 +28,32 @@ def log_to_db():
     dbConnect.close()
     print("Done")
 
-# Track the ISS in real time
-def track_iss():
-    print("The ISS is currently at Latitude:", coordinates["latitude"], "and Longitude:", coordinates["longitude"], "Timestamp:", time.ctime(timestamp))
-    log_to_db()
-
 # Check who and how many are on board and print to screen
+def astronauts():
+    astronauts = requests.get("http://api.open-notify.org/astros.json")
+    astronauts_json = astronauts.json()
+    print("There are currently", astronauts_json["number"], "people on board the ISS. They are...")
+    for astronaut in astronauts_json["people"]:
+        print("Astronaut",  astronaut["name"], "who is on board the", astronaut["craft"])
 
-# Grab JSON data
-astronauts = requests.get("http://api.open-notify.org/astros.json")
-astronauts_json = astronauts.json()
+def api_service_check():
+    open_notify_api = requests.get("http://api.open-notify.org")
+    if open_notify_api.status_code != 200:
+        print("Looks like the API service is down. Please try again later.")
+        exit()
+    else:
+        astronauts()
 
-#Loop through the astronauts name
-print("There are currently", astronauts_json["number"], "people on board the ISS. They are...")
-for astronaut in astronauts_json["people"]:
-     print("Astronaut",  astronaut["name"], "who is on board the", astronaut["craft"])
+#Check API 
+api_service_check()
 
 # Start tracking the ISS
 print("Starting tracking, press 'Ctrl + C' to stop...")
 
 try:
-    while iss_location.status_code == 200:
-        iss_location = requests.get("http://api.open-notify.org/iss-now.json")
-        iss_json = iss_location.json()
-        coordinates = iss_json["iss_position"]
-        timestamp = iss_json["timestamp"]
+    while True:
         track_iss()
+        log_to_db()
         time.sleep(5)
 except KeyboardInterrupt:
     print("Stopping tracking.\nThanks for using!")

@@ -53,7 +53,6 @@ print("Starting tracking, press 'Ctrl + C' to stop...")
 try:
     while True:
         track_iss()
-        log_to_db()
         time.sleep(5)
 except KeyboardInterrupt:
     print("Stopping tracking.\nThanks for using!")

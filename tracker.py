@@ -48,7 +48,7 @@ def api_service_check():
 api_service_check()
 
 # Start tracking the ISS
-print("Starting tracking, press 'Ctrl + C' to stop...")
+print("\nStarting tracking, press 'Ctrl + C' to stop...\n")
 
 try:
     while True:

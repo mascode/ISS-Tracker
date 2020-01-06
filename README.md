@@ -9,10 +9,17 @@ Navigate to the directory where you downloaded the program and simply run
 ```python
 python tracker.py # to track ISS' location
 python passover.py # to check the next fly-over times for your location
-
 ```
 
 Location is displayed as longitude and latitude. Your location is stored in a database that is generated at first run. Coordinates obtained from tracking are also saved to the database. Tracker also displays who is on board. 
+
+This project does require [one external library](https://pypi.org/project/requests/) which can be acquired by running the requirements.txt with pip
+
+```
+pip install -r requirements.txt
+```
+
+
 
 ### Sample Output:
 

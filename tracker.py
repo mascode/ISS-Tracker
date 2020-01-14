@@ -1,32 +1,33 @@
-import json
 import requests
 import sqlite3
 import time
 
+# Grab the ISS' location set coordinates and timestamp as global variables so that other functions can call them
+def get_iss_data():
+    global __COORDINATES__
+    global __TIMESTAMP__
+    __API__ = requests.get("http://api.open-notify.org/iss-now.json")
+    __JSON__ = __API__.json()
+    __COORDINATES__ = __JSON__["iss_position"]
+    __TIMESTAMP__ = __JSON__["timestamp"]
+
 # Track the ISS in real time and log the coordinates to the database
 def track_iss():
-    iss_location = requests.get("http://api.open-notify.org/iss-now.json") 
-    iss_json = iss_location.json()
-    coordinates = iss_json["iss_position"]
-    timestamp = iss_json["timestamp"]
-    print("The ISS is currently at Latitude:", coordinates["latitude"], "and Longitude:", coordinates["longitude"], "Timestamp:", time.ctime(timestamp))
-    log_to_db()
-
-# Save to Database
-def log_to_db():
-    iss_location = requests.get("http://api.open-notify.org/iss-now.json") 
-    iss_json = iss_location.json()
-    coordinates = iss_json["iss_position"]
-    timestamp = iss_json["timestamp"]
+    get_iss_data()
+    print("The ISS is currently at Latitude:", __COORDINATES__["latitude"], "and Longitude:", __COORDINATES__["longitude"], "Timestamp:", time.strftime("%a, %b %d %Y %H:%M:%S", time.gmtime(__TIMESTAMP__)))
+    log_coordinates_to_db()
+    
+# Save coordinates to Database
+def log_coordinates_to_db():
     dbConnect = sqlite3.connect("ISS.db")
     c = dbConnect.cursor()
-    c.execute("CREATE TABLE IF NOT EXISTS iss_position (timestamp text, latitude int, longitude int)")
-    values = [(timestamp), (coordinates["latitude"]), (coordinates["longitude"])]
+    c.execute("CREATE TABLE IF NOT EXISTS iss_position (id integer primary key autoincrement, timestamp text, latitude real, longitude real)")
+    values = [time.strftime("%a, %b %d %Y %H:%M:%S", time.gmtime(__TIMESTAMP__)), (__COORDINATES__["latitude"]), (__COORDINATES__["longitude"])]
     c.execute("INSERT INTO iss_position (timestamp, latitude, longitude) VALUES (?, ?, ?)", values)
     dbConnect.commit()
-    print("Saving to database...")
+    c.close()
     dbConnect.close()
-    print("Done")
+    print("Done saving to database.")
 
 # Check who and how many are on board and print to screen
 def astronauts():
@@ -36,6 +37,7 @@ def astronauts():
     for astronaut in astronauts_json["people"]:
         print("Astronaut",  astronaut["name"], "who is on board the", astronaut["craft"])
 
+# Make sure the service is up before proceeding
 def api_service_check():
     open_notify_api = requests.get("http://api.open-notify.org")
     if open_notify_api.status_code != 200:
@@ -44,16 +46,14 @@ def api_service_check():
     else:
         astronauts()
 
-#Check API 
-api_service_check()
-
 # Start tracking the ISS
-print("\nStarting tracking, press 'Ctrl + C' to stop...\n")
-
-try:
-    while True:
-        track_iss()
-        time.sleep(5)
-except KeyboardInterrupt:
-    print("Stopping tracking.\nThanks for using!")
-    exit()
+if __name__ == "__main__":
+    api_service_check()
+    print("\nStarting tracking, press 'Ctrl + C' to stop...\n")
+    try:
+        while True:
+            track_iss()
+            time.sleep(5)
+    except KeyboardInterrupt:
+        print("Stopping tracking.\nThanks for using!")
+        exit()

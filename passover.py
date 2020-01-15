@@ -13,6 +13,7 @@ def global_position():
     c = db_connect.cursor()
     c.execute("CREATE TABLE IF NOT EXISTS location (id integer primary key, lat real, lon real)")
     c.execute("INSERT INTO location (lat, lon) VALUES (?, ?)", values)
+    c.close()
     db_connect.commit()
     db_connect.close()
     print("Location saved to database")
@@ -27,10 +28,12 @@ def check_for_location():
     query = c.fetchone()
     if query is None:
         print("User Location not found")
+        c.close()
         db_connect.close()
         global_position()
     else:
         print("Location found..")
+        c.close()
         db_connect.close()
         passing_times_with_db()
 
@@ -76,12 +79,13 @@ def choices():
             x = int(input(">>> Choose 1-3: "))
             break
         except ValueError:
-            print("Oops! You fucked up, choose a number between 1 and 3")
+            print("Oops! Incorrect selection, choose a number between 1 and 3")
     if x == 1:
         print("Clearing the database..")
         db_connect = sqlite3.connect("ISS.db")
         c = db_connect.cursor()
         c.execute("DELETE FROM location WHERE id = 1")
+        c.close()
         db_connect.commit()
         db_connect.close()
         print("Database cleared")
@@ -98,5 +102,6 @@ def choices():
         print("Please make a proper selection")
     choices()
 
-check_for_location()
-choices()
+if __name__ == "__main__":
+    check_for_location()
+    choices()

@@ -2,7 +2,12 @@ import requests
 import sqlite3
 import time
 
-# Grab the ISS' location set coordinates and timestamp as global variables so that other functions can call them
+__API__ = requests.get("http://api.open-notify.org/iss-now.json")
+__JSON__ = __API__.json()
+__COORDINATES__ = __JSON__["iss_position"]
+__TIMESTAMP__ = __JSON__["timestamp"]
+
+# Grab the ISS' location as coordinates and timestamp as timestamp
 def get_iss_data():
     global __COORDINATES__
     global __TIMESTAMP__
@@ -14,7 +19,7 @@ def get_iss_data():
 # Track the ISS in real time and log the coordinates to the database
 def track_iss():
     get_iss_data()
-    print("The ISS is currently at Latitude:", __COORDINATES__["latitude"], "and Longitude:", __COORDINATES__["longitude"], "Timestamp:", time.strftime("%a, %b %d %Y %H:%M:%S", time.gmtime(__TIMESTAMP__)))
+    print("The ISS is currently at Latitude:", __COORDINATES__["latitude"], "and Longitude:", __COORDINATES__["longitude"], "Timestamp:", time.ctime(__TIMESTAMP__))
     log_coordinates_to_db()
     
 # Save coordinates to Database
@@ -22,7 +27,7 @@ def log_coordinates_to_db():
     dbConnect = sqlite3.connect("ISS.db")
     c = dbConnect.cursor()
     c.execute("CREATE TABLE IF NOT EXISTS iss_position (id integer primary key autoincrement, timestamp text, latitude real, longitude real)")
-    values = [time.strftime("%a, %b %d %Y %H:%M:%S", time.gmtime(__TIMESTAMP__)), (__COORDINATES__["latitude"]), (__COORDINATES__["longitude"])]
+    values = [time.ctime(__TIMESTAMP__), (__COORDINATES__["latitude"]), (__COORDINATES__["longitude"])]
     c.execute("INSERT INTO iss_position (timestamp, latitude, longitude) VALUES (?, ?, ?)", values)
     dbConnect.commit()
     c.close()
@@ -57,3 +62,5 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("Stopping tracking.\nThanks for using!")
         exit()
+
+
